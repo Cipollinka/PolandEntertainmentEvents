@@ -19,9 +19,7 @@ import PolandStack from '../StackNavigator';
 export default function AppManager() {
   const viewLoader = <LoaderRoot />;
   const viewGame = <PolandStack />;
-  const appManagerStack = (link, _userAgent) => (
-    <AppManagerStack dataLoad={link} userAgent={_userAgent} />
-  );
+  const appManagerStack = (link, _userAgent) => <AppManagerStack dataLoad={link} userAgent={_userAgent} />;
 
   const [isLoadingScreen, setLoadingScreen] = useState(true);
   const [isGameOpen, setGameOpen] = useState(true);
@@ -48,8 +46,8 @@ export default function AppManager() {
       for (let i = 0; i < 7; i++) {
         result += Math.floor(Math.random() * 10);
       }
-      await Storage.save('userID', result); // зберігаємо userID
-      userID.current = result;
+      userID.current = '' + new Date().getTime() + '-' + result;
+      await Storage.save('userID', userID.current); // зберігаємо userID
     }
   }
 
@@ -57,11 +55,11 @@ export default function AppManager() {
   async function getAdID() {
     await requestTrackingPermission(); // робимо запит на відстеження
     ReactNativeIdfaAaid.getAdvertisingInfoAndCheckAuthorization(true).then(
-      res => {
-        // обробляємо клік в алерт
-        adID.current = res.id ? res.id : '00000000-0000-0000-0000-000000000000'; // отримуємо advertising id
-        initAppManager();
-      },
+        res => {
+          // обробляємо клік в алерт
+          adID.current = res.id ? res.id : '00000000-0000-0000-0000-000000000000'; // отримуємо advertising id
+          initAppManager();
+        },
     );
   }
 
@@ -94,41 +92,41 @@ export default function AppManager() {
       }
     });
     OneSignal.User.addTag(
-      'timestamp_user_id',
-      `${new Date().getTime()}_${userID.current}`,
+        'timestamp_user_id',
+        userID.current,
     ); // додаємо тег унікального користувача
   }
 
   const onInstallConversionDataCanceller = appsFlyer.onInstallConversionData(
-    res => {
-      try {
-        if (JSON.parse(res.data.is_first_launch) === true) {
-          if (res.data.af_status === 'Non-organic') {
-            if (res.data.campaign.toString().includes('_')) {
-              subsRef.current = res.data.campaign;
-              appendParams.current = 'NON-ORGANIC';
+      res => {
+        try {
+          if (JSON.parse(res.data.is_first_launch) === true) {
+            if (res.data.af_status === 'Non-organic') {
+              if (res.data.campaign.toString().includes('_')) {
+                subsRef.current = res.data.campaign;
+                appendParams.current = 'NON-ORGANIC';
+              } else {
+                appendParams.current = 'CONVERT-SUBS-MISSING-SPLITTER';
+              }
+              generateFinish();
             } else {
-              appendParams.current = 'CONVERT-SUBS-MISSING-SPLITTER';
+              getAsaAttribution();
             }
-            generateFinish();
-          } else {
-            getAsaAttribution();
           }
+        } catch (err) {
+          console.log(err);
+          loadGame();
         }
-      } catch (err) {
-        console.log(err);
-        loadGame();
-      }
-    },
+      },
   );
 
   async function getAsaAttribution() {
     try {
       const adServicesAttributionData =
-        await AppleAdsAttributionInstance.getAdServicesAttributionData();
+          await AppleAdsAttributionInstance.getAdServicesAttributionData();
       if (
-        !adServicesAttributionData ||
-        typeof adServicesAttributionData.attribution !== 'boolean'
+          !adServicesAttributionData ||
+          typeof adServicesAttributionData.attribution !== 'boolean'
       ) {
         appendParams.current = 'ORGANIC';
         generateFinish();
@@ -150,14 +148,12 @@ export default function AppManager() {
     OneSignal.User.getOnesignalId().then(res => {
       onesignalID.current = res;
       dataLoad.current =
-        Params.bodyLin +
-        `?${Params.bodyLin.split('space/')[1]}=1&appsID=${
-          appsID.current
-        }&adID=${adID.current}&onesignalID=${onesignalID.current}&deviceID=${
-          deviceID.current
-        }&userID=${deviceID.current}${generateSubs()}${
-          appendParams.current ? `&info=${appendParams.current}` : ''
-        }`;
+          Params.bodyLin +
+          `?${Params.bodyLin.split('space/')[1]}=1&appsID=${
+              appsID.current
+          }&adID=${adID.current}&onesignalID=${onesignalID.current}&deviceID=${
+              deviceID.current
+          }&userID=${deviceID.current}${generateSubs()}${appendParams.current ? `&info=${appendParams.current}` : ''}` + '&timestamp=' + userID.current;
       Storage.save('link', dataLoad.current);
       openAppManagerView(true, false);
     });
@@ -181,8 +177,8 @@ export default function AppManager() {
       return '';
     }
     const subParams = subList
-      .map((sub, index) => `sub_id_${index + 1}=${sub}`)
-      .join('&');
+        .map((sub, index) => `sub_id_${index + 1}=${sub}`)
+        .join('&');
 
     return `&${subParams}`;
   }
@@ -286,8 +282,8 @@ export default function AppManager() {
   }, []);
 
   return !isLoadingScreen
-    ? isGameOpen
-      ? viewGame
-      : appManagerStack(dataLoad.current, userAgent.current)
-    : viewLoader;
+      ? isGameOpen
+          ? viewGame
+          : appManagerStack(dataLoad.current, userAgent.current)
+      : viewLoader;
 }
