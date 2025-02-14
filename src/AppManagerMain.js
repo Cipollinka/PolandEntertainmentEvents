@@ -39,7 +39,7 @@ export default function AppManagerMain({navigation, route}) {
   const openInBrowser = [
     'mailto:',
     'itms-appss://',
-    socialLinks,
+    'https://t.me/',
     'fb://',
     'nl.abnamro.deeplink.psd2.consent://',
   ];
@@ -172,6 +172,7 @@ export default function AppManagerMain({navigation, route}) {
               '*',
               'http://*',
               'https://*',
+              socialLinks,
             ]}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
             onNavigationStateChange={stateChange}
